@@ -1,0 +1,57 @@
+#    使用Dirichlet过程模拟高考
+#    Copyright (C) 2020 Neutron3529
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+simulation=function(
+m=100#学生数
+,n=3650#此处为学习新/旧知识点的次数
+,a=2#文中的a，越大则知识点越分散
+,p=0#已知的知识点数量为0
+,st.know=matrix(0,m,n)#m个学生的脑子里面装的东西
+,gaokao=rep(0,n)#用于记录高考真题用什么知识点
+,gaokao_score=100#高考有100个知识点
+,lr=seq(1,0,length=m)#学习率，代表一个学生有多大的意愿，排在第一位的学生学习意愿是100%而最后一位是0（完全不学……）
+,q=0.75#学生听一遍就学会的概率
+){
+  for(i in 1:n){#学生学习循环
+    if(runif(1)<a/(p+a)){
+      p=p+1#新学会了一个知识
+      current=p
+    }else{
+      current=1+round(runif(1)*p)#如果学会的是已有的知识，那么在已经学会的知识中进行抽样
+    }
+    st.know[,current]=st.know[,current]|(runif(m)<q&runif(m)<lr)#runif(m)<q说的是学生听一遍学会的概率，runif(m)<lr说的是学生听这一遍的概率
+    #上式依分布等价于st.know[,current]=st.know[,current]|(runif(m)<q*lr)，对未接触R的同学应当注意，上式两个runif(m)（random-uniform的缩写，产生随机均的匀分布）返回的结果不同
+  }
+  for(i in 1:gaokao_score){#高考出题循环
+    if(runif(1)<a/(p+a)){
+      p=p+1#新学会了一个知识
+      current=p
+    }else{
+      current=1+round(runif(1)*p)#如果学会的是已有的知识，那么在已经学会的知识中进行抽样
+    }
+    gaokao[current]=gaokao[current]+1
+  }
+  drop(st.know%*%gaokao)
+}
+res=sapply(1:100,function(x)simulation())#进行100次模拟
+plot(rowMeans(res))#画出模拟结果
+
+res2=sapply(1:100,function(x)simulation(q=.2))#艾宾浩斯曲线表示，一次过的概率只有20%
+points(rowMeans(res2),col='red')#画出模拟结果
+
+c(rowMeans(res)[70],rowMeans(res2)[1])
+abline(h=91.11,col='blue')#可以看出，提高学习效率(q)比提高学习意愿(lr)带来的帮助要大。
+
+plot(rowMeans(res==apply(res,2,max)),type='l')
+points(rowMeans(res2==apply(res2,2,max)),col='red',type='l')
