@@ -1,0 +1,43 @@
+#!/bin/bash
+if [ ! -f 'cadical' ] ; then
+  if [ ! -d 'cadical-vivinst' ] ; then
+    if [ -f 'cadical-vivinst.tar.xz' ] ; then
+      tar xJf cadical-vivinst.tar.xz
+    else
+      echo 'need either a `cadical` (since cadical is better than kissat when dealing with Wang tile)'
+      echo 'or a cadical-vivinst.tar.xz (to create a cadical-vivinst file, which is the fastest cadical)'
+      exit 0
+    fi
+  fi
+  {
+    cd cadical-vivinst
+    CXXFLAGS='-march=native -pipe' ./configure -flto && make
+    mv build/cadical ..
+    cd ..
+  } &
+fi
+if [ ! -f 'wang' ] ; then
+  rustc --edition 2021 wang.rs -C opt-level=3 -C target-cpu=native -C codegen-units=1 -C lto -o wang
+fi &
+wait
+
+wang () {
+  if [ $# -lt 2 ] ; then
+    echo usage: $0 [w] [h] [colors]
+    return
+  fi
+  export w=$1
+  export h=$2
+  shift 2
+  export cols="$*"
+  export absw=$(expr \( \( $w \> 0 \) \* 2 - 1 \) \* $w)
+  export absh=$(expr \( \( $h \> 0 \) \* 2 - 1 \) \* $h)
+  ./wang $w $h $cols > "wang${w}x${h}c${cols}".cnf && ./cadical "wang${w}x${h}c${cols}".cnf -w "wang${w}x${h}c${cols}".sol
+  if [[ "$?" == "10" ]] ; then cargo run -- "wang${w}x${h}c${cols}".sol $absw $absh $cols ; fi
+}
+
+if [ "x$1" == "xclean" ] ; then
+  rm -r cadical cadical-vivinst wang *.cnf *.sol *.png Cargo.lock target 2>/dev/null
+fi
+
+wang "$@"
