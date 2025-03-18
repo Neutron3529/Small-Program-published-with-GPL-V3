@@ -1,9 +1,14 @@
 #![cfg_attr(test, feature(test))]
+#![cfg_attr(
+    target_feature = "avx512ifma",
+    feature(stdarch_x86_avx512, repr_simd, array_chunks, iter_array_chunks)
+)]
 
 pub mod mont;
 pub mod pow;
 pub use pow::{MulMod, pow};
-
+#[cfg(target_feature = "avx512ifma")]
+pub mod s52;
 #[cfg(test)]
 mod tests {
     extern crate test;
@@ -33,6 +38,22 @@ mod tests {
         assert_eq!(pow13(1, ()), 1594323);
         assert_eq!(pow14(1, ()), 4782969);
         assert_eq!(pow(1, ()), 7625597484987);
+
+        let mont: Vec<_> = PRIMES
+            .into_iter()
+            .map(|i| {
+                let mont = mont::Mul64::new(i);
+                mont.mont_to_num(pow(mont.num_to_mont(3), black_box(mont)))
+            })
+            .collect();
+        let s52: Vec<_> = PRIMES
+            .array_chunks()
+            .flat_map(|i| {
+                let mont = s52::Mul52::new(s52::Base::new(*i));
+                mont.mont_to_num(pow(mont.num_to_mont(s52::Base::THREE.0), black_box(mont)))
+            })
+            .collect();
+        assert_eq!(mont, s52);
     }
 
     const PRIMES: [u64; 32] = [
@@ -127,24 +148,24 @@ mod tests {
         });
     }
 
-    // #[bench]
-    // fn bench_mul(b: &mut Bencher) {
-    //     use std::simd::Simd;
-    //     use core::arch::x86_64::__m512i;
-    //     b.iter(|| {
-    //         let mut sum = 0;
-    //         let base = __m512i::from(Simd::from_array([0u64;8]));
-    //         let basep1 = __m512i::from(Simd::from_array([1u64;8]));
-    //         let a = __m512i::from(Simd::from_array([123451234512345u128, 543215432112345u128, 674383451938563u128, 873648726941659u128, 658493756381723u128, 859372947382912u128, 857493827164836u128, 815481651439659u128]));
-    //         let b = __m512i::from(Simd::from_array([658493756381723u128, 859372947382912u128, 857493827164836u128, 815481651439659u128, 123451234512345u128, 543215432112345u128, 674383451938563u128, 873648726941659u128]));
-    //         for _ in 0..50 {
-    //             unsafe {
-    //                 let z = black_box(_mm512_madd52hi_epu64(base, black_box(a), black_box(b)));
-    //                 let x = black_box(_mm512_madd52hi_epu64(basep1, black_box(a), black_box(b)));
-    //                 black_box(_mm512_cmpge_epu64_mask(black_box(a), black_box(b)))
-    //             }
-    //         }
-    //         sum
-    //     });
-    // }
+    #[bench]
+    fn bench_div_mont_s52(b: &mut Bencher) {
+        b.iter(|| {
+            let mut sum = 0;
+            let mut iter = PRIMES.array_chunks();
+            for i in &mut iter {
+                let mont = s52::Mul52::new(s52::Base::new(*i));
+                let res =
+                    mont.mont_to_num(pow(mont.num_to_mont(s52::Base::THREE.0), black_box(mont)));
+                for i in res {
+                    sum += i;
+                }
+            }
+            for &i in iter.remainder() {
+                let mont = mont::Mul64::new(i);
+                sum += mont.mont_to_num(pow(mont.num_to_mont(3), black_box(mont)))
+            }
+            sum
+        });
+    }
 }
