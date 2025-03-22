@@ -109,7 +109,7 @@ fn check_table_with_parallel(mut start: u64, mut end: u64) {
     const PRIMES:&[u64] = &[2,3,5,7,11,13,17,19,23];
 
     end = end.div_ceil(BLOCK_SIZE);
-    start = (start / BLOCK_SIZE).max(end / 29); // thus all items are calculated
+    start = (start / BLOCK_SIZE).max(1);
     let start_idx = start * BLOCK_SIZE;
 
     fn block_remain() -> (u64, u64) {
@@ -137,7 +137,7 @@ fn check_table_with_parallel(mut start: u64, mut end: u64) {
     (0..(end - start)).par_bridge().for_each(|blk_idx| {
         let offset = blk_idx * BLOCK_SIZE;
         let mut coef = Vec::new();
-        const REM:u64 =2;
+        const REM:u64 =4;
         let mut iter = idx.iter().map(|x|x + offset).array_chunks::<8>();
         while let Some(i) = iter.next() {
             let mont = s52::Mul52::new(s52::Base::new(i));
