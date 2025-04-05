@@ -1,9 +1,10 @@
+[lib]
+crate-type = ["cdylib"]
 [package]
-name = "mulmod_with_mont"
+name = "gpu-ptx"
 version = "0.1.0"
 edition = "2024"
 publish = ["crates-io"]
 
 [dependencies]
-cuda_min = "0.1.2-pre1"
-rayon = "1.10.0"
+cuda_min = { version = "0.1.2-pre1" }
