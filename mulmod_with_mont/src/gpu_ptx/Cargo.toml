@@ -7,4 +7,4 @@ edition = "2024"
 publish = ["crates-io"]
 
 [dependencies]
-cuda_min = { version = "0.1.2-pre1" }
+cuda_min = { version = "0.1.4" }
