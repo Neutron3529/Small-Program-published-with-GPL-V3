@@ -7,7 +7,7 @@ use core::arch::asm;
 use core::arch::nvptx::*;
 use cuda_min::repeat;
 
-const REM: u64 = 2;
+const REM: u64 = 4;
 
 #[unsafe(no_mangle)]
 pub unsafe extern "ptx-kernel" fn mont_pows_batch(out: *mut u64) {
