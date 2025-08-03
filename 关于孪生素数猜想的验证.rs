@@ -3,16 +3,33 @@
 pub struct PrimeFlag(Vec<u64>);
 impl PrimeFlag {
     pub fn new(i: usize) -> Self {
-        Self(vec![u64::MAX;(i+63)/64])
+        Self(vec![u64::MAX;((i+2)/3+63)/64])
     }
     pub fn index(&self, i:usize) -> bool {
-        self.0[i>>6] & (1u64<< (i & 63)) != 0
+        if i<4 {return true}
+        let j = i / 3;
+        let k = i - (j>>1) * 6;
+        if k==1 || k==5 {
+            self.0[j>>6] & (1u64<< (j & 63)) != 0
+        } else {
+            false
+        }
     }
     pub fn set(&mut self, i:usize) {
-        self.0[i>>6] |= 1u64<< (i & 63)
+        if i<4 {return}
+        let j = i / 3;
+        let k = i - (j>>1) * 6;
+        if k==1 || k==5 {
+            self.0[j>>6] |= 1u64<< (j & 63)
+        }
     }
     pub fn unset(&mut self, i:usize) {
-        self.0[i>>6] &= !(1u64<< (i & 63))
+        if i<4 {return}
+        let j = i / 3;
+        let k = i - (j>>1) * 6;
+        if k==1 || k==5 {
+            self.0[j>>6] &= !(1u64<< (j & 63))
+        }
     }
 }
 pub fn euler_sieve(n: usize) -> Vec<usize> {
