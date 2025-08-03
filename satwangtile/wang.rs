@@ -1,6 +1,6 @@
 // 生产cnf格式送cadical（做这个问题cadical比kissat快）
 type Color = u8;
-fn gen(mut v: i32, mut h: i32, blocks: [&[Color]; 4]) {
+fn r#gen(mut v: i32, mut h: i32, blocks: [&[Color]; 4]) {
     let cyc_h = v < 0; // horizontal
     let cyc_v = h < 0; // vertical
     h = h.abs();
@@ -11,8 +11,8 @@ fn gen(mut v: i32, mut h: i32, blocks: [&[Color]; 4]) {
     // - - - -
     // 8 9 A B h_edges=vec[h-1][v]
     // println!("{}",nodes[1][1])
-    let h_rules = (h - if cyc_h{0}else{1}) as usize;
-    let v_rules = (v - if cyc_v{0}else{1}) as usize;
+    let h_rules = (h - if cyc_h { 0 } else { 1 }) as usize;
+    let v_rules = (v - if cyc_v { 0 } else { 1 }) as usize;
     let mut v_edges = vec![vec![0; v_rules]; h as usize];
     let mut h_edges = vec![vec![0; v as usize]; h_rules];
 
@@ -88,7 +88,7 @@ fn gen(mut v: i32, mut h: i32, blocks: [&[Color]; 4]) {
                             (cur_node + i) * if (1 << i) & t != 0 { -1 } else { 1 }
                         )
                     }
-                    restrictions -=1;
+                    restrictions -= 1;
                     println!("0")
                 }
             }
@@ -97,7 +97,14 @@ fn gen(mut v: i32, mut h: i32, blocks: [&[Color]; 4]) {
         // [&mut nodes,&mut h_edges,&mut v_edges].iter_mut().flat_map(|x|x.iter_mut().flat_map(|x|x.iter_mut())).for_each(|x|{*x=t;t+=1});
     }
 }
-fn prints(node: i32, edge: i32, rules: &[&[u8]], bidx:usize, block_bits: i32, color_bits: i32) -> i32 {
+fn prints(
+    node: i32,
+    edge: i32,
+    rules: &[&[u8]],
+    bidx: usize,
+    block_bits: i32,
+    color_bits: i32,
+) -> i32 {
     let mut zeros = 0;
     for (n, r) in rules[bidx].iter().copied().enumerate() {
         println! {"c rules {n}, color={r}, direction=`{}`",['W','S','A','D'][bidx]}
@@ -106,7 +113,7 @@ fn prints(node: i32, edge: i32, rules: &[&[u8]], bidx:usize, block_bits: i32, co
                 print!("{} ", (node + i) * if (1 << i) & n != 0 { -1 } else { 1 })
             }
             println! {"{} 0", (edge + c) * if (1 << c) & r != 0 { 1 } else { -1 }}
-            zeros +=1
+            zeros += 1
         }
     }
     zeros
@@ -146,7 +153,7 @@ fn main() {
         .flat_map(|x| x.iter_mut())
         .for_each(|x| *x = hs.range(..*x).count() as Color);
     if w.len() == s.len() && s.len() == a.len() && a.len() == d.len() {
-        gen(
+        r#gen(
             std::env::args()
                 .nth(1)
                 .map(|x| x.parse::<i32>().unwrap_or(10))

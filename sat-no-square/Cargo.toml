@@ -1,0 +1,7 @@
+[package]
+name = "sat-no-square"
+version = "0.1.0"
+edition = "2024"
+publish = ["crates-io"]
+
+[dependencies]
