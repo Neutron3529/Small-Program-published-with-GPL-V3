@@ -1,9 +1,25 @@
 #![feature(array_windows)]
-fn euler_sieve(n: usize) -> Vec<usize> {
-    let mut is_prime = vec![true; n + 1];
+
+pub struct PrimeFlag(Vec<u64>);
+impl PrimeFlag {
+    pub fn new(i: usize) -> Self {
+        Self(vec![u64::MAX;(i+63)/64])
+    }
+    pub fn index(&self, i:usize) -> bool {
+        self.0[i>>6] & (1u64<< (i & 63)) != 0
+    }
+    pub fn set(&mut self, i:usize) {
+        self.0[i>>6] |= 1u64<< (i & 63)
+    }
+    pub fn unset(&mut self, i:usize) {
+        self.0[i>>6] &= !(1u64<< (i & 63))
+    }
+}
+pub fn euler_sieve(n: usize) -> Vec<usize> {
+    let mut is_prime = PrimeFlag::new(n+1);// vec![true; n + 1];
     let mut primes = Vec::new();
     for i in 2..=n {
-        if is_prime[i] {
+        if is_prime.index(i) {
             primes.push(i);
         }
         for &p in &primes {
@@ -11,7 +27,7 @@ fn euler_sieve(n: usize) -> Vec<usize> {
             if m > n {
                 break;
             }
-            is_prime[m] = false;
+            is_prime.unset(m);
             if i % p == 0 {
                 break;
             }
@@ -21,7 +37,7 @@ fn euler_sieve(n: usize) -> Vec<usize> {
 }
 fn main() {
     let now = std::time::Instant::now();
-    let res = euler_sieve(100_0000_0000);
+    let res = euler_sieve(1000_0000_0000);
     println!("cost {:?}", now.elapsed());
     let now = std::time::Instant::now();
     let res = res
@@ -30,6 +46,7 @@ fn main() {
         .collect::<Vec<_>>();
     println!("cost {:?}", now.elapsed());
     println!("len: {}", res.len());
+    let now = std::time::Instant::now();
     let hs = std::collections::HashSet::<usize>::from_iter(res.iter().copied());
     for i in 0..res.len() {
         let mut find = false;
@@ -43,4 +60,5 @@ fn main() {
             println!("index = {i}, {} cannot be decomposed", res[i])
         }
     }
+    println!("cost {:?}", now.elapsed());
 }
